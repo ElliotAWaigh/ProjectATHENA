@@ -5,11 +5,13 @@ import numpy as np
 import re
 from entity_extractor import EntityExtractor
 import Tools.football as football
+import os
 
 class MultiStageProcessor:
     def __init__(self):
         self.entity_extractor = EntityExtractor()
         self.questions_answers = self.load_questions_answers("question_answer.csv")
+        
         
         if not self.questions_answers:
             raise ValueError("Questions and answers are empty. Please check the CSV file.")
@@ -22,6 +24,7 @@ class MultiStageProcessor:
         self.collected_data = {}
         self.last_best_match = None
         self.similarity_threshold = 0.7  # 70% similarity threshold
+        self.max_threshold = 0.9
 
     def load_questions_answers(self, file_path):
         try:
@@ -80,8 +83,13 @@ class MultiStageProcessor:
                 self.collected_data = {}
                 return f"I need more information: {', '.join(required_context.keys())}. Optional: {', '.join(optional_context.keys())}", True
             
-            self.state = "confirming"
-            return f"Did you mean: '{matched_question}'? {matched_answer}", True
+            if best_similarity > self.max_threshold:
+                self.state = "waiting"
+                return matched_answer, False
+            
+            if 0.7 <= best_similarity <= self.max_threshold:
+                self.state = "confirming"
+                return f"Did you mean: '{matched_question}'?", True
 
         elif self.state == "confirming":
             if 'yes' in user_input.lower():
@@ -127,3 +135,8 @@ class MultiStageProcessor:
         elif "Can you show me the stats of" in question:
             return football.action_for_player_stats(context)
         return "I'm sorry, I don't know how to handle that question."
+    
+    def reset_to_initial(self):
+        self.state = "waiting"
+        self.collected_data = {}
+        return "What can I help you with?", True

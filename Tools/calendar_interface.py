@@ -102,11 +102,9 @@ def context_for_show_events_today():
     required_context = {
         "date": ["today"]
     }
-    optional_context = {
-        "time_range": []
-    }
+    optional_context = {}
     open_ended_required = []
-    open_ended_optional = ["time_range"]
+    open_ended_optional = []
     return required_context, optional_context, open_ended_required, open_ended_optional
 
 def context_for_update_meeting():
