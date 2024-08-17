@@ -1,0 +1,6 @@
+# Ignore the Vosk model directory
+vosk-model-small-en-us-0.15/
+
+# Ignore credentials and token files
+credentials.json
+token.json
