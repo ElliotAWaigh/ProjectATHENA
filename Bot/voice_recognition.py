@@ -22,6 +22,7 @@ class VoiceRecognition:
                 text = self.recognizer.Result()
                 sentence = text[14:-3].strip().lower()
 
+                print(sentence)
                 # Skip blank or irrelevant sentences
                 if not sentence:
                     continue

@@ -14,7 +14,7 @@ class MultiStageProcessor:
         if not self.questions_answers:
             raise ValueError("Questions and answers are empty. Please check the CSV file.")
 
-        self.vectorizer = TfidfVectorizer(stop_words='english')
+        self.vectorizer = TfidfVectorizer(stop_words=None, ngram_range=(1, 2))
         self.questions_matrix = self.vectorizer.fit_transform([self.preprocess_text(q) for q in self.questions_answers.keys()])
         self.state = "waiting"
         self.collected_data = {}
@@ -36,7 +36,14 @@ class MultiStageProcessor:
             df = pd.read_csv(file_path)
             if df.empty:
                 raise ValueError(f"File {file_path} is empty.")
-            return dict(zip(df['question'], df['answer']))
+            questions_answers = dict(zip(df['question'], df['answer']))
+            
+            # Debug: Print out loaded questions
+            print("Loaded Questions:")
+            for question in questions_answers.keys():
+                print(f"- {question}")
+            
+            return questions_answers
         except FileNotFoundError:
             return {}
         except pd.errors.EmptyDataError:
@@ -45,57 +52,66 @@ class MultiStageProcessor:
     def preprocess_text(self, text):
         return re.sub(r'[^\w\s]', '', text.lower())
 
+
     def find_best_response(self, user_input):
-        input_vec = self.vectorizer.transform([self.preprocess_text(user_input)])
+        # Preprocess the input
+        preprocessed_input = self.preprocess_text(user_input)
+        input_vec = self.vectorizer.transform([preprocessed_input])
+
+        # Compute similarities
         similarities = cosine_similarity(input_vec, self.questions_matrix)
+        
+        # Find the best match
         best_idx = np.argmax(similarities)
+        best_similarity = similarities[0][best_idx]
         best_question = list(self.questions_answers.keys())[best_idx]
         best_answer = self.questions_answers[best_question]
-        return best_question, best_answer, similarities[0][best_idx]
+
+        return best_question, best_answer, best_similarity
+
+    
 
     def process_query(self, user_input):
-            if self.state == "waiting":
-                matched_question, matched_answer, best_similarity = self.find_best_response(user_input)
-                if best_similarity < self.similarity_threshold:
-                    return "ATHENA: I'm sorry, I didn't understand that. Can you please rephrase?", True
+        if self.state == "waiting":
+            matched_question, matched_answer, best_similarity = self.find_best_response(user_input)
 
-                self.last_best_match = matched_question
+            if best_similarity < self.similarity_threshold:
+                return "ATHENA: I'm sorry, I didn't understand that. Can you please rephrase?", True
 
-                if matched_answer == "Action Needed":
-                    quit()
+            self.last_best_match = matched_question
 
-                if matched_answer == "Context Needed":
-                    self.state = "collecting"
-                    req_ctx, opt_ctx, open_req, open_opt, close_req, close_opt = self.determine_required_context(matched_question)
+            if matched_answer == "Action Needed":
+                return "ATHENA: Action required. Please provide more details.", True
 
-                    # Pass `req_ctx` and `opt_ctx` to `setup_context_queues`
-                    self.setup_context_queues(open_req, open_opt, close_req, close_opt, req_ctx, opt_ctx)
+            if matched_answer == "Context Needed":
+                self.state = "collecting"
+                req_ctx, opt_ctx, open_req, open_opt, close_req, close_opt = self.determine_required_context(matched_question)
+                self.setup_context_queues(open_req, open_opt, close_req, close_opt, req_ctx, opt_ctx)
 
-                    required_keys = ', '.join(req_ctx.keys()) if req_ctx else 'No required info'
-                    optional_keys = ', '.join(opt_ctx.keys()) if opt_ctx else 'No optional info'
-                    return f"ATHENA: I need more information: {required_keys}. Optional: {optional_keys}", True
+                required_keys = ', '.join(req_ctx.keys()) if req_ctx else 'No required info'
+                optional_keys = ', '.join(opt_ctx.keys()) if opt_ctx else 'No optional info'
+                return f"ATHENA: I need more information: {required_keys}. Optional: {optional_keys}", True
 
-                if best_similarity > self.max_threshold:
-                    self.state = "waiting"
-                    return matched_answer, False
+            if best_similarity > self.max_threshold:
+                self.state = "waiting"
+                return matched_answer, False
 
-                if 0.7 <= best_similarity <= self.max_threshold:
-                    self.state = "confirming"
-                    return f"ATHENA: Did you mean: '{matched_question}'?", True
+            if 0.7 <= best_similarity <= self.max_threshold:
+                self.state = "confirming"
+                return f"ATHENA: Did you mean: '{matched_question}'?", True
 
-            elif self.state == "confirming":
-                if 'yes' in user_input.lower():
-                    response = self.questions_answers.get(self.last_best_match, "ATHENA: Thank you for confirming. We will process your request.")
-                    self.state = "waiting"
-                    return response, False
-                else:
-                    return "ATHENA: Let's try again. What information are you looking for?", True
+        elif self.state == "confirming":
+            if 'yes' in user_input.lower():
+                response = self.questions_answers.get(self.last_best_match, "ATHENA: Thank you for confirming. We will process your request.")
+                self.state = "waiting"
+                return response, False
+            else:
+                return "ATHENA: Let's try again. What information are you looking for?", True
 
-            elif self.state == "collecting":
-                return self.handle_collecting_state(user_input)
+        elif self.state == "collecting":
+            return self.handle_collecting_state(user_input)
 
-            return "ATHENA: I'm not sure how to handle this. Can you rephrase?", True
-
+        return "ATHENA: I'm not sure how to handle this. Can you rephrase?", True
 
     def setup_context_queues(self, open_req, open_opt, close_req, close_opt, required_context, optional_context):
         # Assign them to instance variables
