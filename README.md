@@ -1,4 +1,4 @@
-![ATHENA ICON!](Logo/ATHENA Banner.png)
+![ATHENA ICON!](Logo/ATHENA_Banner.png)
 
 **Project ATHENA**
 
