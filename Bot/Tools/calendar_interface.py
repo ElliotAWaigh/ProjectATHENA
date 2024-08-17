@@ -50,21 +50,21 @@ def main():
             "description" : "Some more details on this awesome event"
         }
 
-        
     except HttpError as error:
         print("An error occured:", error)
+
 
 def context_for_add_meeting():
     required_context = {
         "meeting_title": [],        # Open-ended
         "date_time": [],            # Open-ended
         "participants": [],         # Open-ended
-        "duration": ["1hr", "2hrs", "3hrs"]  # Closed-ended options
+        "duration": ["1hr", "one hour", "two hours", "2hrs", "three hours", "3hrs"]  # Closed-ended options
     }
     optional_context = {
         "location": [],             # Open-ended
         "description": [],          # Open-ended
-        "reminder_notification": ["1hr", "2hrs", "3hrs"] # Closed-ended options
+        "reminder_notification": ["1hr", "one hour", "two hours", "2hrs", "three hours", "3hrs"] # Closed-ended options
     }
     open_ended_required = ["meeting_title", "date_time", "participants"]
     open_ended_optional = ["location", "description"]
@@ -74,19 +74,18 @@ def context_for_add_meeting():
     # Combine all context definitions
     context_definitions = {**required_context, **optional_context}
     
-    print("Context being sent:", required_context, optional_context, open_ended_required, open_ended_optional, close_ended_required, close_ended_optional)
+    #print("Context being sent:", required_context, optional_context, open_ended_required, open_ended_optional, close_ended_required, close_ended_optional)
     
     return required_context, optional_context, open_ended_required, open_ended_optional, close_ended_required, close_ended_optional
 
-
-
-
 def action_for_add_meeting(context):
-    print("Final context received:", context)  # Debug to see what context looks like at this point
+    #print("Final context received:", context)  # Debug to see what context looks like at this point
+
     meeting_title = context.get("meeting_title", "Untitled Meeting")
     date_time = context.get("date_time", "unspecified time")
     participants = context.get("participants", "no participants")
     location = context.get("location", "no location")
     description = context.get("description", "no description")
     reminder_notification = context.get("reminder_notification", "no reminders")
+
     return f"The context is, {context}"

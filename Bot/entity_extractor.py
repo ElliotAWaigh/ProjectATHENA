@@ -6,7 +6,7 @@ class EntityExtractor:
 
     def extract_entities(self, user_input, context_definitions):
         entities = {}
-        print("Processing", user_input, context_definitions)
+        #print("Processing", user_input, context_definitions)
 
         for entity_type, possible_values in context_definitions.items():
             if possible_values:
