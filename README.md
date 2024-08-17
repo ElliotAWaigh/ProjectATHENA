@@ -1,3 +1,5 @@
+![ATHENA ICON!](Logo/ATHENA.png)
+
 **Project ATHENA**
 
 Introducing the Automated Task Handling with Enhancement Neural AI.
