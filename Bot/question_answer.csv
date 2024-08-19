@@ -9,8 +9,8 @@ Add a meeting to my calendar,Context Needed
 Remove a meeting from my calendar,Context Needed
 Show me my events for today,Context Needed
 Update the meeting on my calendar,Context Needed
-Tell me about my meeting tomorrow,Context Needed
-Tell me about tomorrow,Context Needed
+Tell me about my meetings tomorrow,Action Needed
+Tell me about tomorrow,Action Needed
 Tell me about Talia's Schedule,Context Needed
 I need to edit a meeting,Context Needed
 Hello,"Hello! How are you !"
@@ -23,3 +23,5 @@ Skip,Action Needed
 Resume,Action Needed
 Volume Down,Action Needed
 Volume Up,Action Needed
+Look this up for me,Web Question
+Search,Web Question

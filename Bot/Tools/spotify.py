@@ -96,8 +96,6 @@ if __name__ == "__main__":
         print("Invalid action")
 
 def action(question):
-    
-    
     if "play my liked songs" in question.lower():
         play_liked_songs()
     elif "loop" in question.lower():

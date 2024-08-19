@@ -220,7 +220,6 @@ class MultiStageProcessor:
             for context in close_opt
         ]
 
-
     def determine_required_context(self, question):
         if "add a meeting to my calendar" in question.lower():
             return calendar.context_for_add_meeting()
@@ -246,3 +245,14 @@ class MultiStageProcessor:
 
         if "restart" in question.lower():
             os.execv(sys.executable, ['python'] + sys.argv)
+
+
+# if the question has 'web search' as question type
+# It takes the entire string, REMOVES 'look up'
+# Searches that
+# Returns
+
+# It will SEPERATELY run everything as if it was a web search question
+# Defaults to web search until proven otherwise
+
+# If search is the first thing after 'Hey [Action Word]', process

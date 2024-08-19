@@ -24,12 +24,13 @@ class VoiceRecognition:
                     sentence = text[14:-3].strip().lower()
                     if sentence:
                         print(sentence)
+
                     # Skip blank or irrelevant sentences
                     if not sentence:
                         continue
 
                     if sentence in self.end_words:
-                        print("Ending session.")
+                        print("See you next time.")
                         return "END_SESSION"
 
                     if sentence in self.action_words:
