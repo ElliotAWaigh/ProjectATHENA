@@ -6,6 +6,9 @@ import re
 from entity_extractor import EntityExtractor
 import Tools.football as football
 import Tools.calendar_interface as calendar
+import Tools.spotify as spotify
+import os
+import sys
 
 class MultiStageProcessor:
     def __init__(self, required_context=None, optional_context=None):
@@ -81,7 +84,7 @@ class MultiStageProcessor:
             self.last_best_match = matched_question
 
             if matched_answer == "Action Needed":
-                return "ATHENA: Action required. Please provide more details.", True
+                self.perform_action_required(matched_question)
 
             if matched_answer == "Context Needed":
                 self.state = "collecting"
@@ -229,3 +232,17 @@ class MultiStageProcessor:
             return calendar.action_for_add_meeting(context)
         # Add other actions based on the context here
         return "I'm sorry, I don't know how to handle that question."
+    
+    def perform_action_required(self, question):
+
+        spotify_commands = ["play my liked songs", "loop", "pause", "skip", "resume", "volume up", "volume down"] 
+        #Play My Liked Songs,Action Needed
+
+        if question.lower() in spotify_commands:
+            spotify.action(question)
+
+        if "goodbye" in question.lower():
+            quit()
+
+        if "restart" in question.lower():
+            os.execv(sys.executable, ['python'] + sys.argv)

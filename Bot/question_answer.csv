@@ -15,3 +15,11 @@ Tell me about Talia's Schedule,Context Needed
 I need to edit a meeting,Context Needed
 Hello,"Hello! How are you !"
 Goodbye,Action Needed
+Restart,Action Needed
+Play My Liked Songs,Action Needed
+Loop,Action Needed
+Pause,Action Needed
+Skip,Action Needed
+Resume,Action Needed
+Volume Down,Action Needed
+Volume Up,Action Needed

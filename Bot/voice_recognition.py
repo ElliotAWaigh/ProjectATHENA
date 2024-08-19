@@ -7,7 +7,7 @@ class VoiceRecognition:
         self.model = Model(model_path)
         self.recognizer = KaldiRecognizer(self.model, 16000)
         self.mic = pyaudio.PyAudio()
-        self.stream = self.mic.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=8192)
+        self.stream = self.mic.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=16384)  # Increased buffer size to prevent overflow
         self.stream.start_stream()
 
         self.action_words = action_words
@@ -16,28 +16,36 @@ class VoiceRecognition:
 
     def listen(self):
         while True:
-            data = self.stream.read(4096)
+            try:
+                data = self.stream.read(4096, exception_on_overflow=False)  # Handle overflow more gracefully
 
-            if self.recognizer.AcceptWaveform(data):
-                text = self.recognizer.Result()
-                sentence = text[14:-3].strip().lower()
+                if self.recognizer.AcceptWaveform(data):
+                    text = self.recognizer.Result()
+                    sentence = text[14:-3].strip().lower()
+                    if sentence:
+                        print(sentence)
+                    # Skip blank or irrelevant sentences
+                    if not sentence:
+                        continue
 
-                print(sentence)
-                # Skip blank or irrelevant sentences
-                if not sentence:
+                    if sentence in self.end_words:
+                        print("Ending session.")
+                        return "END_SESSION"
+
+                    if sentence in self.action_words:
+                        response = f"I'm here, {random.choice(self.worker_words)}."
+                        print(response)
+                        return response
+
+                    # Return the detected sentence for further processing
+                    return sentence
+
+            except OSError as e:
+                if e.errno == -9981:  # Input overflowed
+                    print("Input overflowed, retrying...")
                     continue
-
-                if sentence in self.end_words:
-                    print("Ending session.")
-                    return "END_SESSION"
-
-                if sentence in self.action_words:
-                    response = f"I'm here, {random.choice(self.worker_words)}."
-                    print(response)
-                    return response
-
-                # Return the detected sentence for further processing
-                return sentence
+                else:
+                    raise e
 
 def create_voice_recognition():
     model_path = r"C:\Users\Elliot\OneDrive - Queensland University of Technology\00AthenaV2\Bot\vosk-model-small-en-us-0.15"
