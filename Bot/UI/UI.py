@@ -18,10 +18,10 @@ class AthenaMainWindow(QMainWindow):
 
         # ATHENA Logo
         logo_label = QLabel(self)
-        logo_pixmap = QPixmap("athena_logo.png")  # Replace with your logo path
+        logo_pixmap = QPixmap(r"C:\Users\Elliot\OneDrive - Queensland University of Technology\00AthenaV2\Logo\ATHENA.png")  # Replace with your logo path
         logo_label.setPixmap(logo_pixmap)
         logo_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(logo_label)
+        layout.addWidget(logo_label) 
 
         # Buttons Around Logo
         calendar_button = QPushButton("Calendar", self)

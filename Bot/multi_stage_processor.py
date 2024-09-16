@@ -7,6 +7,7 @@ from entity_extractor import EntityExtractor
 import Tools.football as football
 import Tools.calendar_interface as calendar
 import Tools.spotify as spotify
+import Tools.wakeup as wakeup
 import os
 import sys
 
@@ -245,6 +246,11 @@ class MultiStageProcessor:
 
         if "restart" in question.lower():
             os.execv(sys.executable, ['python'] + sys.argv)
+
+
+        if "boot up" in question.lower():
+            wakeup.wakeup()
+
 
 
 # if the question has 'web search' as question type
