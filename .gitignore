@@ -12,7 +12,6 @@ venv/
 venv/Lib
 venv/Scripts
 
-
 # Ignore Logins
 login.py
 test.py
