@@ -9,6 +9,9 @@ token.json
 .venv/
 .venv
 venv/
+venv/Lib
+venv/Scripts
+
 
 # Ignore Logins
 login.py
