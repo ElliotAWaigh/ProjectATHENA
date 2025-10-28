@@ -49,7 +49,7 @@ class VoiceRecognition:
                     raise e
 
 def create_voice_recognition():
-    model_path = r"C:\Users\Elliot\OneDrive - Queensland University of Technology\00AthenaV2\Bot\vosk-model-small-en-us-0.15"
+    model_path = r"E:\Users\Elliot\OneDrive\OneDrive - Queensland University of Technology\00AthenaV2\Bot\vosk-model-small-en-us-0.15"
     action_words = ["athena", "computer", "jarvis"]
     end_words = ["stop", "end", "goodbye", "goodnight", "good night"]
     worker_words = ["Boss", "Love", "Sir"]

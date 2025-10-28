@@ -7,6 +7,8 @@ __pycache__
 credentials.json
 token.json
 .venv/
+.venv
+venv/
 
 # Ignore Logins
 login.py

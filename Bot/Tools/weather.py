@@ -25,3 +25,49 @@ try:
 except KeyError as e:
     print(f"KeyError: {e} - Check the structure of the response data.")
 
+
+# Algorithm
+def optimal_weather_drying():
+    degrees_celcius = 26
+    humidity = 50
+    wind = range(15,25)
+
+def mid_weather_drying():
+    degrees_celcius = range(15,25)
+    humidity = range(50,70)
+    wind = range(5,15)
+
+def least_optimal_drying():
+    degrees_celcius = 15
+    humidity = 70
+    wind = range(0,5)
+
+def no_option():
+    weather = "rain"
+
+def algorithm():
+    degrees = 24
+    humidity = 45
+    wind = 4
+    # check if weather is within a certain list range
+    optimal_degrees = []
+    mid_degrees = []
+    least_degrees = []
+    
+    # maybe use case?
+    match degrees:
+        case d if d in optimal_degrees:
+            temperature = 'optimal'
+            pass
+        case d if d in mid_degrees:
+            temperature = 'okay'
+            pass
+        case d if d in least_degrees:
+            temperature = 'not optimal'
+            pass
+        
+    match humidity:
+        case h:
+            pass
+    
+        

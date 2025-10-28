@@ -14,7 +14,7 @@ import sys
 class MultiStageProcessor:
     def __init__(self, required_context=None, optional_context=None):
         self.entity_extractor = EntityExtractor()
-        self.questions_answers = self.load_questions_answers(r"C:\Users\Elliot\OneDrive - Queensland University of Technology\00AthenaV2\Bot\question_answer.csv")
+        self.questions_answers = self.load_questions_answers(r"E:\Users\Elliot\OneDrive\OneDrive - Queensland University of Technology\00AthenaV2\Bot\question_answer.csv")
         if not self.questions_answers:
             raise ValueError("Questions and answers are empty. Please check the CSV file.")
 
@@ -207,7 +207,7 @@ class MultiStageProcessor:
         # Save the context definitions dictionary
         #self.context_definitions = context_definitions
         
-        self.collected_data = {}  # Reset collected data when setting up new context
+        self.collected_data = {}  # Reset collected data when setting up new context-
 
         # Create the context queue
         self.context_queue = [
@@ -238,6 +238,8 @@ class MultiStageProcessor:
         spotify_commands = ["play my liked songs", "loop", "pause", "skip", "resume", "volume up", "volume down"] 
         #Play My Liked Songs,Action Needed
 
+        light_commands = ["turn on my lights, turn off my lights"]
+
         if question.lower() in spotify_commands:
             spotify.action(question)
 
@@ -247,9 +249,10 @@ class MultiStageProcessor:
         if "restart" in question.lower():
             os.execv(sys.executable, ['python'] + sys.argv)
 
-
         if "boot up" in question.lower():
             wakeup.wakeup()
+
+        
 
 
 

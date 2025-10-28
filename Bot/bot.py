@@ -1,5 +1,7 @@
 from multi_stage_processor import MultiStageProcessor
 from voice_recognition import create_voice_recognition
+import random
+import Tools.welcome
 
 class Bot:
     def __init__(self):
@@ -15,6 +17,12 @@ class Bot:
         return response  # Return the response for printing or sending
 
     def run(self):
+        welcome_message = random.randint(0,1)
+        if welcome_message == 1:
+            Tools.welcome.Hello_Name()
+        else:
+            Tools.welcome.Hello_sir()
+
         print("Welcome to the Bot.")
         
         control_method = input("Would you like to use voice control, text control, or Telegram control? (Enter 'voice', 'text', or 'telegram'): ").strip().lower()
