@@ -19,11 +19,9 @@ When new systems and mechanics are developed, they will be implemented into the 
 This being a private project, not meant for mass implementation is due to the sensitive data that will be stored within this automation project.
 
 
-
-
 ATHENA Version History
 
-V4 — Modular Intelligence Overhaul
+**V4 — Modular Intelligence Overhaul**
 
 - Complete refactor into a hybrid intent-processing system:
 
@@ -41,7 +39,7 @@ V4 — Modular Intelligence Overhaul
 
 - Improved reliability with async-safe execution and auto context resolution.
 
-V3 — Voice, Entities, and Expansion
+**V3 — Voice, Entities, and Expansion**
 
 - Added Vosk Speech Recognition for voice command input.
 
@@ -51,7 +49,7 @@ V3 — Voice, Entities, and Expansion
 
 - Enhanced conversational flow with fallback logic between text and voice input.
 
-V2 — Contextual Core
+**V2 — Contextual Core**
 
 - Introduced the first multi-stage context queue system, allowing multi-turn conversations.
 
@@ -60,7 +58,7 @@ V2 — Contextual Core
 - Early modular architecture began forming under /Tools.
 
 
-V1 — Foundation Prototype
+**V1 — Foundation Prototype**
 
 - Built using Microsoft Bot Framework.
 
