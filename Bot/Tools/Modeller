@@ -1,0 +1,38 @@
+import openai
+import bpy
+import os
+
+# Set up OpenAI API key (make sure to load it from a safe location)
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+class Modeller:
+    def __init__(self):
+        self.openai_model = "gpt-4"  # Set your OpenAI model here
+
+    def generate_blender_script(self, prompt):
+        """Send a prompt to OpenAI and receive a Blender Python script."""
+        response = openai.Completion.create(
+            engine=self.openai_model,
+            prompt=f"Write a Blender Python script to {prompt}.",
+            max_tokens=500
+        )
+        # Extract the script from the OpenAPI response
+        blender_script = response.choices[0].text.strip()
+        return blender_script
+
+    def execute_blender_script(self, script):
+        """Execute the generated Blender Python script."""
+        try:
+            exec(script, {'bpy': bpy})  # Run the script in Blender's environment
+            return "Script executed successfully!"
+        except Exception as e:
+            return f"An error occurred while running the script: {str(e)}"
+
+    def handle_model_request(self, user_input):
+        """Process the user's request, generate Blender code, and execute it."""
+        # Get the Blender script from OpenAI
+        blender_script = self.generate_blender_script(user_input)
+        # Execute the script in Blender
+        result = self.execute_blender_script(blender_script)
+        return result
+

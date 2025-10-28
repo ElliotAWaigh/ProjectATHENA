@@ -1,0 +1,16 @@
+# Ignore the Vosk model directory
+vosk-model-small-en-us-0.15/
+__pycache__/
+__pycache__
+
+# Ignore credentials and token files
+credentials.json
+token.json
+.venv/
+.venv
+venv/
+
+# Ignore Logins
+login.py
+test.py
+lights.py
