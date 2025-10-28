@@ -1,22 +1,23 @@
 import re
 
-class EntityExtractor:
-    def __init__(self):
-        pass
+def extract_entities(text):
+    """Simple rule-based entity extractor for ATHENA hybrid memory."""
+    entities = {}
 
-    def extract_entities(self, user_input, context_definitions):
-        entities = {}
-        #print("Processing", user_input, context_definitions)
+    # Detect brightness
+    brightness_match = re.search(r'(\d+)\s?%?', text)
+    if brightness_match:
+        entities["brightness"] = int(brightness_match.group(1))
 
-        for entity_type, possible_values in context_definitions.items():
-            if possible_values:
-                # For predefined possible values, check if any of them exist in the user input
-                for value in possible_values:
-                    if re.search(rf"\b{re.escape(value)}\b", user_input, re.IGNORECASE):
-                        entities[entity_type] = value
-                        break  # Stop checking once a match is found
-            else:
-                # For open-ended types, capture the whole user input
-                entities[entity_type] = user_input.strip()
+    # Detect color temperature hints
+    if "warmer" in text:
+        entities["color_temp"] = "warm"
+    elif "cooler" in text or "colder" in text:
+        entities["color_temp"] = "cool"
 
-        return entities
+    # Detect device names (match partials)
+    for name in ["mushroom light", "top lamp light", "middle lamp light", "bottom lamp light"]:
+        if name in text:
+            entities["device"] = name
+
+    return entities

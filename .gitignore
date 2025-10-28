@@ -13,3 +13,4 @@ venv/
 # Ignore Logins
 login.py
 test.py
+lights.py
