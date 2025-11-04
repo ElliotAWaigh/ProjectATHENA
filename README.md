@@ -9,7 +9,7 @@ made by **Elliot Waigh**
 ATHENA is a modular, voice-enabled automation framework designed for local or cloud execution.  It integrates speech recognition (Vosk), intent recognition (TF-IDF hybrid context engine), and modular tool interfaces.
 
 **ATHENA** uses a multi-stage processing pipeline:
-1.Intent Recognition – TF-IDF + Entity Extraction hybrid model
+1. Intent Recognition – TF-IDF + Entity Extraction hybrid model
 2. Context Manager – Handles parameter collection & task continuation
 3. Tool Invocation – Executes dynamically registered tools (e.g., lights, calendar, Spotify)
 
