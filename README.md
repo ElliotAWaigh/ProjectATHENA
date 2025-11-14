@@ -21,6 +21,13 @@ This being a private project, not meant for mass implementation is due to the se
 
 ATHENA Version History
 
+**V4.1 - Default Parameter Update** - ***In Progress, started 13.11.25***
+
+- Adding default parameters to make conversation more natural, so there isn't a confirmation needed when asking simple, default queries such as; turn off my lights, weather for tomorrow.
+
+- Drawing up ideas for implementing Neo4J or MongoDB for wider scope of stuff, such as friendship / relationship tree for birthday, fun fact capture and calendar control, e.g. Fraser likes golf, so does Bash.
+
+
 **V4 — Modular Intelligence Overhaul**
 
 - Complete refactor into a hybrid intent-processing system:

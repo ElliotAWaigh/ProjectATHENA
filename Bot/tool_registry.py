@@ -1,60 +1,49 @@
-import os
-import sys
-import json
 import importlib
+import json
+import os
 import traceback
 
 
 class ToolRegistry:
+    """
+    Loads tools from a manifest (config/tools.json) that maps intent -> module path.
+    Each tool must expose a TOOL_SPEC = {
+        "intent": "...",
+        "description": "...",
+        "commands": {
+            "command_name": {
+                "examples": [...],
+                "params": [...],          # params expected by the function
+                "defaults": {...},        # <-- NEW: default values if not provided
+                "function": "func_name"
+            }, ...
+        }
+    }
+    """
     def __init__(self, tools_manifest="config/tools.json"):
-        """
-        Loads tools defined in config/tools.json.
-        Supports fallback to ../config/tools.json automatically.
-        """
-        self.tools_manifest = self._resolve_manifest_path(tools_manifest)
-        self.tools = {}
+        self.manifest_path = tools_manifest
+        self.tools = {}      # intent -> module
+        # commands[(intent, cmd)] = (func, examples, params, defaults)
         self.commands = {}
-
-        self._load_manifest()
-
-    # ------------------------------------------------------------------
-    def _resolve_manifest_path(self, relative_path):
-        """Search for config/tools.json in multiple likely locations."""
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        local_path = os.path.join(current_dir, relative_path)
-        parent_path = os.path.join(os.path.dirname(current_dir), relative_path)
-
-        if os.path.exists(local_path):
-            return local_path
-        elif os.path.exists(parent_path):
-            return parent_path
-        else:
-            print(f"[ToolRegistry] ⚠️ tools.json not found in expected paths:\n  - {local_path}\n  - {parent_path}")
-            return local_path  # keep default for safety
+        self._load_from_manifest()
 
     # ------------------------------------------------------------------
-    def _load_manifest(self):
-        if not os.path.exists(self.tools_manifest):
-            print(f"[ToolRegistry] ⚠️ tools.json not found at {self.tools_manifest}")
+    def _load_from_manifest(self):
+        if not os.path.isfile(self.manifest_path):
+            print(f"[ToolRegistry] ⚠️ tools.json not found at {self.manifest_path}")
             return
 
         try:
-            with open(self.tools_manifest, "r", encoding="utf-8") as f:
+            with open(self.manifest_path, "r", encoding="utf-8") as f:
                 manifest = json.load(f)
         except Exception as e:
-            print(f"[ToolRegistry] ❌ Failed to read tools.json: {e}")
+            print(f"[ToolRegistry] ❌ Failed to parse tools.json: {e}")
             return
 
-        # Ensure Tools folder is importable
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        tools_path = os.path.join(current_dir, "Tools")
-        if tools_path not in sys.path:
-            sys.path.append(tools_path)
+        loaded_tools = 0
+        loaded_cmds = 0
 
         for intent, module_path in manifest.items():
-            if not module_path.startswith("Tools."):
-                module_path = f"Tools.{module_path}"
-
             try:
                 module = importlib.import_module(module_path)
             except Exception as e:
@@ -62,38 +51,47 @@ class ToolRegistry:
                 traceback.print_exc()
                 continue
 
-            if not hasattr(module, "TOOL_SPEC"):
-                print(f"[ToolRegistry] ⚠️ No TOOL_SPEC found in {module_path}")
-                continue
-
             spec = getattr(module, "TOOL_SPEC", None)
             if not spec or "commands" not in spec:
-                print(f"[ToolRegistry] ⚠️ Invalid TOOL_SPEC in {module_path}")
+                print(f"[ToolRegistry] ⚠️ TOOL_SPEC missing/invalid in {module_path}")
                 continue
 
             self.tools[intent] = module
+            loaded_tools += 1
 
-            for cmd, info in spec["commands"].items():
-                func_name = info.get("function")
-                examples = info.get("examples", [])
+            for cmd, meta in spec["commands"].items():
+                func_name = meta.get("function")
+                examples = meta.get("examples", [])
+                params = meta.get("params", [])  # list of param names
+                defaults = meta.get("defaults", {})  # NEW field
+
                 if not func_name or not hasattr(module, func_name):
                     print(f"[ToolRegistry] ⚠️ Missing function for {intent}.{cmd}")
                     continue
 
                 func = getattr(module, func_name)
-                self.commands[(intent, cmd)] = (func, examples)
+                self.commands[(intent, cmd)] = (func, examples, params, defaults)
+                loaded_cmds += 1
 
             print(f"[ToolRegistry] ✅ Registered tool: {intent}")
 
-        print(f"[ToolRegistry DEBUG] Loaded {len(self.tools)} tools and {len(self.commands)} commands.")
+        print(f"[ToolRegistry DEBUG] Loaded {loaded_tools} tools and {loaded_cmds} commands.")
 
     # ------------------------------------------------------------------
     def get_all_examples(self):
-        """Return {intent: {cmd: [examples...]}} for TF-IDF training."""
+        """
+        Returns {intent: {cmd: [examples...]}}
+        """
         examples_by_intent = {}
-        for (intent, cmd), (func, examples) in self.commands.items():
+        for (intent, cmd), (func, examples, params, defaults) in self.commands.items():
             examples_by_intent.setdefault(intent, {})[cmd] = examples
         return examples_by_intent
 
     def get_tool(self, intent):
         return self.tools.get(intent)
+
+    def get_command_meta(self, intent, cmd):
+        """
+        Returns (func, examples, params, defaults) or None.
+        """
+        return self.commands.get((intent, cmd))

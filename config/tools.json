@@ -1,3 +1,4 @@
 {
-  "light_control": "lights"
+  "weather": "Tools.weather",
+  "light_control": "Tools.lights"
 }

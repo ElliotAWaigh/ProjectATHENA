@@ -60,9 +60,9 @@ class Bot:
             elif user_input:
                 print(self.receive_input(user_input))
 
-    def run_telegram_control(self):
-        from Tools.telegram_bot import run_telegram_bot
-        run_telegram_bot(self)
+    # def run_telegram_control(self):
+    #     from Tools.telegram_bot import run_telegram_bot
+    #     run_telegram_bot(self)
 
 def process_input_from_telegram(input_text):
     bot = Bot()
