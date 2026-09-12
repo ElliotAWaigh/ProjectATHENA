@@ -1,18 +1,28 @@
-# Ignore the Vosk model directory
-vosk-model-small-en-us-0.15/
-__pycache__/
-__pycache__
+# Virtual environments
+.venv/
+venv/
+env/
 
-# Ignore credentials and token files
+# Python cache & build files
+**/__pycache__/
+*.py[cod]
+*$py.class
+.cache/
+
+# Vosk models
+**/vosk-model-small-en-us-0.15/
+*.tar.gz
+*.zip
+
+# Secrets & tokens
 credentials.json
 token.json
-.venv/
-.venv
-venv/
-venv/Lib
-venv/Scripts
-
-# Ignore Logins
 login.py
-test.py
-lights.py
+.env
+
+# Checkpoints if any remain
+**/checkpoint-*/
+
+# OS files
+.DS_Store
+Thumbs.db

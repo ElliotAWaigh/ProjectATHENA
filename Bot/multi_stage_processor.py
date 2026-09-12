@@ -1,67 +1,86 @@
 import asyncio
+import json
+from pathlib import Path
 import re
-import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from peft import PeftModel
 from tool_registry import ToolRegistry
 
-# If you already have a richer extractor, import and use it here
-try:
-    from entity_extractor import extract_entities
-except Exception:
-    def extract_entities(_text: str):
-        return {}
+# Path resolution:
+# BOT_DIR = 00ATHENA/ProjectATHENA/Bot
+# PROJECT_ROOT = 00ATHENA/ProjectATHENA
+# WORKSPACE_ROOT = 00ATHENA (where athena_qwen3b_lora is located)
+BOT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = BOT_DIR.parent
+
+LORA_PATH = str(PROJECT_ROOT / "athena_qwen3b_lora")
+
+WORKSPACE_ROOT = PROJECT_ROOT.parent
+
+DEFAULT_TOOLS_MANIFEST = str(BOT_DIR / "config" / "tools.json")
+BASE_MODEL_ID = "Qwen/Qwen2.5-3B-Instruct"
+
+# Direct path to your trained adapter in 00ATHENA
+LORA_PATH = str(WORKSPACE_ROOT / "athena_qwen3b_lora")
+
+SYSTEM_PROMPT = (
+    "You are ATHENA, a loyal, sharp-witted, and familiar local AI companion. "
+    "You and the user have worked together for a long time and know each other inside out. "
+    "Your tone is deadpan, easygoing, subtly sarcastic, yet quietly devoted—like an old friend "
+    "who might roll their eyes at the hour but will always show up without hesitation. "
+    "Never sound like a customer service rep or use cheerful corporate fluff like 'How can I assist you today?'. "
+    "Address the user naturally as 'Boss', 'Sir', or simply dive into the banter. "
+    "When asked to perform a device or system action, return a single JSON object containing "
+    "'action', 'tool', 'command', 'params', and a spoken 'response' field confirming the task "
+    "(e.g., 'Done and dusted, Boss.', 'Lights out, sir. Sleep well.', 'Right away.', 'Sorted.'). "
+    "For banter, idle talk, and casual queries, answer with grounded wit and familiar loyalty."
+)
 
 
 class MultiStageProcessor:
-    def __init__(self, tools_manifest="config/tools.json", direct_threshold=0.65):
+    def __init__(self, tools_manifest=DEFAULT_TOOLS_MANIFEST):
+        print("[MSP] 🧠 Loading ToolRegistry...")
         self.tool_registry = ToolRegistry(tools_manifest)
-        self.threshold = direct_threshold
-        self.vectorizer = None
-        self.matrix = None
-        self.index = []       # [(intent, cmd, func)]
-        self._build_command_tfidf()
 
-        # simple slot-filling memory (optional; still works as before)
-        self.context = None
+        print(f"[MSP] 🚀 Initializing Qwen 2.5 3B with ATHENA LoRA adapter from {LORA_PATH}...")
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.bfloat16,
+        )
 
-    # ---------------- TF-IDF ----------------
-    def _prep(self, text):
-        text = text.lower().strip()
-        text = re.sub(r"[^\w\s]", "", text)
-        return text
+        self.tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_ID)
+        base_model = AutoModelForCausalLM.from_pretrained(
+            BASE_MODEL_ID,
+            quantization_config=bnb_config,
+            device_map="auto",
+            torch_dtype=torch.bfloat16,
+        )
 
-    def _build_command_tfidf(self):
-        all_examples = []
-        self.index = []
+        self.model = PeftModel.from_pretrained(base_model, LORA_PATH)
+        self.model.eval()
+        print("[MSP] ✅ ATHENA local neural pipeline ready.")
 
-        examples_dict = self.tool_registry.get_all_examples()
-        for intent, cmds in examples_dict.items():
-            for cmd, examples in cmds.items():
-                meta = self.tool_registry.get_command_meta(intent, cmd)
-                if not meta:
-                    continue
-                func, example_list, params, defaults = meta
-                for ex in example_list:
-                    all_examples.append(self._prep(ex))
-                    self.index.append((intent, cmd, func))
+    def _query_llm(self, user_input: str) -> str:
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_input},
+        ]
+        prompt = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        inputs = self.tokenizer(prompt, return_tensors="pt").to("cuda")
 
-        if not all_examples:
-            print("[MSP] ⚠️ No command examples found. Processor disabled.")
-            return
+        with torch.no_grad():
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=128,
+                temperature=0.2,
+                do_sample=True,
+                pad_token_id=self.tokenizer.eos_token_id,
+            )
 
-        self.vectorizer = TfidfVectorizer(ngram_range=(1, 2))
-        self.matrix = self.vectorizer.fit_transform(all_examples)
-        print(f"[MSP] ✅ Loaded {len(all_examples)} example commands from tools.")
-
-    def _best_match(self, text):
-        if not text.strip() or self.matrix is None or not self.matrix.shape[0]:
-            return None, None, None, 0.0
-        x = self.vectorizer.transform([self._prep(text)])
-        sims = cosine_similarity(x, self.matrix).flatten()
-        best_idx = int(np.argmax(sims))
-        intent, cmd, func = self.index[best_idx]
-        return intent, cmd, func, float(sims[best_idx])
+        reply = self.tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+        return reply.strip()
 
     async def _maybe_await(self, func, **kwargs):
         res = func(**kwargs)
@@ -69,83 +88,51 @@ class MultiStageProcessor:
             return await res
         return res
 
-    # ------------- PARAM MERGE LOGIC (defaults!) -------------
-    def _merge_params(self, intent, cmd, user_text):
-        """
-        Merge params in this order (later wins):
-          1) defaults from TOOL_SPEC.commands[cmd].defaults
-          2) tool.resolve_params(user_text) if available
-          3) global extract_entities(user_text)
-        """
-        module = self.tool_registry.get_tool(intent)
-        defaults = {}
-        resolved = {}
-        entities = {}
-
-        meta = self.tool_registry.get_command_meta(intent, cmd)
-        _, _, params_list, defaults = meta if meta else (None, None, [], {})
-
-        if hasattr(module, "resolve_params"):
-            try:
-                resolved = module.resolve_params(user_text) or {}
-            except Exception as e:
-                print(f"[MSP] ⚠️ resolve_params failed for {intent}.{cmd}: {e}")
-                resolved = {}
-
-        try:
-            entities = extract_entities(user_text) or {}
-        except Exception as e:
-            print(f"[MSP] ⚠️ extract_entities failed: {e}")
-            entities = {}
-
-        # Merge: defaults → resolved → entities (explicit > default)
-        merged = {**(defaults or {}), **(resolved or {}), **(entities or {})}
-        return merged, params_list
-
-    # ------------- CONTEXT + EXECUTION -------------
     def process_query(self, user_input: str):
-        text = user_input.lower().strip()
+        if not user_input.strip():
+            return "ATHENA: I didn't catch that.", False
 
-        # If we were waiting for missing params, keep filling:
-        if self.context:
-            pending = self.context
-            prev_params = pending["params"]
-            updates, params_list = self._merge_params(pending["intent"], pending["cmd"], text)
-            merged = {**prev_params, **updates}
+        raw_reply = self._query_llm(user_input)
 
-            missing_after = [p for p in params_list if merged.get(p) is None]
-            if not missing_after or text in ("that's all", "thats all", "done"):
-                result = self._execute_intent(pending["intent"], pending["cmd"], merged)
-                self.context = None
-                return result
-            else:
-                self.context["params"] = merged
-                self.context["missing"] = missing_after
-                return f"ATHENA: Do you have info for {', '.join(missing_after)}? If not, say 'that's all'.", True
+        # 1. Check if output is a JSON tool-call
+        json_match = re.search(r"\{.*\}", raw_reply, re.DOTALL)
+        if json_match:
+            try:
+                payload = json.loads(json_match.group(0))
+                if payload.get("action") == "call_tool":
+                    tool = payload.get("tool")
+                    cmd = payload.get("command")
+                    params = payload.get("params", {})
+                    spoken_response = payload.get("response", "On it, Boss.")
 
-        # Normal path
-        intent, cmd, func, score = self._best_match(user_input)
-        if not intent or score < self.threshold:
-            return "ATHENA: I'm not sure what you mean. Can you rephrase?", True
+                    # Execute the underlying python function
+                    exec_result = self._execute_tool(tool, cmd, params)
+                    
+                    # Return spoken companion confirmation
+                    return f"ATHENA: {spoken_response}", False
+            except Exception as e:
+                print(f"[MSP] ⚠️ JSON parse/execution error: {e}")
 
-        # Build params with defaults support
-        params, params_list = self._merge_params(intent, cmd, user_input)
+        # 2. Conversational response (banter, idle talk)
+        return f"ATHENA: {raw_reply}", False
 
-        # A param is considered "required" only if it's listed and not provided by defaults
-        missing = [p for p in params_list if params.get(p) is None]
-        if missing:
-            # store context to fill later
-            self.context = {"intent": intent, "cmd": cmd, "params": params, "missing": missing}
-            # declare missing ones
-            return f"ATHENA: I need more information — required: {', '.join(missing)}.", True
+    def _execute_tool(self, tool_name: str, cmd: str, params: dict):
+        meta = self.tool_registry.get_command_meta(tool_name, cmd)
+        if not meta:
+            print(f"[MSP] ⚠️ Tool command '{tool_name}.{cmd}' not found in registry.")
+            return None
 
-        # execute immediately
-        return self._execute_intent(intent, cmd, params)
+        func, _, expected_params, defaults = meta
+        
+        # Merge default values if missing
+        merged_params = {**(defaults or {}), **(params or {})}
+        
+        # Filter strictly to expected parameters of the tool function
+        filtered_params = {k: v for k, v in merged_params.items() if k in expected_params}
 
-    def _execute_intent(self, intent, cmd, params):
         try:
-            func, _, _, _ = self.tool_registry.get_command_meta(intent, cmd)
-            result = asyncio.run(self._maybe_await(func, **params))
-            return f"ATHENA: {result}", False
+            result = asyncio.run(self._maybe_await(func, **filtered_params))
+            return result
         except Exception as e:
-            return f"ATHENA: Error executing {cmd}: {e}", False
+            print(f"[MSP] ❌ Error executing {tool_name}.{cmd}: {e}")
+            return None
