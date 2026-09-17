@@ -2,73 +2,72 @@
 
 ## **Project ATHENA**
 
-Introducing the Adaptive Task Handling and Execution Neural Agent. 
+Introducing the **Adaptive Task Handling and Execution Neural Agent**.  
+Engineered by **Elliot Waigh**
 
-made by **Elliot Waigh**
+ATHENA is an offline-first, locally hosted personal intelligence and automation framework designed for zero-data-leakage execution. It combines fine-tuned conversational intelligence, local tool execution, deterministic interpersonal memory, and two-way synchronization with an Obsidian markdown vault and local SQLite Knowledge Graph.
 
-ATHENA is a modular, voice-enabled automation framework designed for local or cloud execution.  It integrates speech recognition (Vosk), intent recognition (TF-IDF hybrid context engine), and modular tool interfaces.
+---
 
-**ATHENA** uses a multi-stage processing pipeline:
-1. Intent Recognition – TF-IDF + Entity Extraction hybrid model
-2. Context Manager – Handles parameter collection & task continuation
-3. Tool Invocation – Executes dynamically registered tools (e.g., lights, calendar, Spotify)
+### **Architecture Overview**
 
-This will be ever evolving as a private project with the goal of automating most of my daily life operations.
+ATHENA uses a dual-engine architecture separating fast conversational banter from factual memory ingestion:
 
-When new systems and mechanics are developed, they will be implemented into the open source framework.
+1. **Front-End Conversational Engine (Qwen 2.5 3B LoRA):**
+   * Handles immediate conversational context, multi-turn working memory, banter, and spoken responses.
+   * Dispatches system and smart-home tool executions via dynamic tool manifests.
+   * Runs natively on **Metal Performance Shaders (FP16)** on macOS and **BitsAndBytes (NF4 4-bit)** on CUDA/Windows.
 
-This being a private project, not meant for mass implementation is due to the sensitive data that will be stored within this automation project.
+2. **Zero-Loss Memory & Consolidation Pipeline (Qwen 2.5 7B Engine):**
+   * **Intent Classification Router:** Classifies turns into `CHITCHAT`, `COMMAND`, `KNOWLEDGE_QUERY`, or `MEMORY_DEBRIEF` without rigid keyword lists.
+   * **Atomic Turn Deconstruction:** Micro-prompts extract visited venues, contextual activity descriptions, recommendations, organizations, and human contacts.
+   * **Interpersonal Loop Tracking:** Trigger-gated tracking of bilateral commitments, debts, and promises (`i_owe_them` vs. `they_owe_me`), with past-tense settlement recognition.
+   * **Deterministic Clarification Gate:** Real-time database collision detection (e.g., distinguishing between contacts with shared first names) paired with semantic decision resolution (`AFFIRM`, `REJECT`, `SPECIFY`) that honors user refusals cleanly.
+   * **Obsidian Vault & Knowledge Graph Persistence:** Programmatically synchronizes updates into structured Markdown notes (`Brain/People/`, `Brain/Places/`, `Brain/System/`) using explicit `[[Wikilinks]]`, atomic `triples`, and serialized database transactions.
 
-ATHENA Version History
+---
 
-**V4.1 - Default Parameter Update** - ***In Progress, started 13.11.25***
+### **ATHENA Version History**
 
-- Adding default parameters to make conversation more natural, so there isn't a confirmation needed when asking simple, default queries such as; turn off my lights, weather for tomorrow.
+#### **V5.1 — Dual-Engine Cognitive Pipeline & Personal Knowledge Graph** *(September 2026)*
+* **Sub-Session Working Memory:** Expanded conversational buffer retaining rolling turns for real-time dialogue callbacks without touching disk.
+* **Obsidian & SQLite Sync:** Replaced flat-file persistence with automatic updates to Obsidian markdown vaults (`Brain/People/`, `Brain/Places/`) and an offline SQLite triple-store (`athena.db`).
+* **Deterministic Semantic Routing:** Implemented zero-shot micro-prompt intent routing (`turn_deconstructor.py`) to prevent casual banter and device commands from triggering memory ingestion pipelines.
+* **Semantic Denial & Clarification Gate:** Added natural language decision resolution (`AFFIRM`, `REJECT`, `SPECIFY`) for contact disambiguation and novel contact provisioning, strictly respecting cancellations without database pollution.
+* **Bilateral Commitment & Loop Engine:** Trigger-gated extraction of loans, borrowed equipment, debts, and promises, automatically updating directional logs in contact notes and the `open_loops` ledger.
+* **Rich Contextual Place Notes:** Added automatic capture of visit duration, activity notes, and impressions for place notes, cross-referencing visitor files with enforced `[[Wikilinks]]`.
+* **Database Concurrency Hardening:** Integrated busy-timeout handlers (`timeout=10.0`) and placeholder filtering to prevent SQLite thread-locking and false entity generation.
 
-- Drawing up ideas for implementing Neo4J or MongoDB for wider scope of stuff, such as friendship / relationship tree for birthday, fun fact capture and calendar control, e.g. Fraser likes golf, so does Bash.
+#### **V5.0 — Natural Language Overhaul** *(September 2026)*
+* Integrated local **Qwen 2.5 3B Instruct** fine-tuned with LoRA for personalized tone and dry-witted conversational delivery.
+* Optimized cross-platform inference: 4-bit NF4 via CUDA on Windows, native FP16 via Metal Performance Shaders on Apple Silicon.
+* Deprecated rigid rule-based matching in favor of dynamic JSON tool dispatch.
 
+#### **V4.1 — Default Parameter Update**
+* Added smart default parameters to streamline common queries (e.g., instant light toggling, forecast checks).
+* Prototyped entity relationship structures for social graph tracking, shared hobbies, and gift/interest capture.
 
-**V4 — Modular Intelligence Overhaul**
+#### **V4.0 — Modular Intelligence Overhaul**
+* Hybrid intent-processing system combining TF-IDF similarity, entity extraction, and multi-turn context slots.
+* Dynamic Tool Registration (`tool_registry.py`) with isolated tool definitions in `config/tools.json`.
+* Unified control interface bridging voice, text, and Telegram messaging bots.
+* Dynamic IP discovery and asynchronous network handling for smart lights.
 
-- Complete refactor into a hybrid intent-processing system:
+#### **V3.0 — Voice, Entities, and Expansion**
+* Integrated Vosk for offline, local automatic speech recognition.
+* Introduced structured entity extraction for device identification, timeframes, and parameters.
+* Added remote command execution via Telegram bot integration.
 
-- Combines TF-IDF similarity, entity extraction, and context memory.
+#### **V2.0 — Contextual Core**
+* Implemented multi-stage context queue system for handling multi-turn parameter collection.
+* Initial modular tool directory structure under `/Tools`.
 
-- Added automatic Tool Registration (tool_registry.py) with modular TOOL_SPEC definitions.
+#### **V1.0 — Foundation Prototype**
+* Initial text-based prototype using Microsoft Bot Framework.
+* Hardcoded rules and static Q&A routing with no offline persistence.
 
-- Unified control interface for voice, text, and Telegram inputs.
+---
 
-- Rebuilt light control system using dynamic IP discovery and async handling.
+### **Security & Data Privacy**
 
-- Implemented hybrid context memory, enabling ATHENA to recall missing parameters naturally.
-
-- Cleaned codebase — deprecated redundant JSON files and isolated tool configuration to config/tools.json.
-
-- Improved reliability with async-safe execution and auto context resolution.
-
-**V3 — Voice, Entities, and Expansion**
-
-- Added Vosk Speech Recognition for voice command input.
-
-- Introduced the Entity Extractor for parsing devices, times, and contextual parameters.
-
-- Integrated Telegram control, enabling remote command execution.
-
-- Enhanced conversational flow with fallback logic between text and voice input.
-
-**V2 — Contextual Core**
-
-- Introduced the first multi-stage context queue system, allowing multi-turn conversations.
-
-- Implemented basic intent recognition and structured response routing.
-
-- Early modular architecture began forming under /Tools.
-
-
-**V1 — Foundation Prototype**
-
-- Built using Microsoft Bot Framework.
-
-- Focused purely on text-based Q&A and simple rule responses.
-
-- No persistence or local processing.
+ATHENA is maintained as an offline-first architecture. Because the system stores personal schedules, locations, relationship details, and real-world habits, all linguistic models, graph indexes, and SQLite engines run strictly on local hardware with no external telemetry or proprietary cloud logging.

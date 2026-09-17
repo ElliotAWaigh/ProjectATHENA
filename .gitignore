@@ -1,28 +1,42 @@
-# Virtual environments
-.venv/
-venv/
-env/
+# ==============================================================================
+# 1. PRIVATE PERSONAL DATA & KNOWLEDGE GRAPH (CRITICAL)
+# ==============================================================================
+Brain/
+*.db
+*.sqlite
+*.sqlite3
+Bot/Memory/athena.db
+Bot/transcript.txt
 
-# Python cache & build files
-**/__pycache__/
+# ==============================================================================
+# 2. TRAINING DATA, FINE-TUNING RUNS & MODEL BINARIES
+# ==============================================================================
+athena_qwen3b_lora/
+Bot/Brain Build/
+vosk-model*/
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.onnx
+
+# ==============================================================================
+# 3. SECRETS, CONFIG & LOCAL ENVIRONMENT
+# ==============================================================================
+.env
+*.env
+# If tools.json contains private home IPs or tokens, uncomment the line below:
+# Bot/config/tools.json
+
+# ==============================================================================
+# 4. PYTHON, OS & CACHE ARTIFACTS
+# ==============================================================================
+.venv/
+env/
+venv/
+__pycache__/
 *.py[cod]
 *$py.class
 .cache/
-
-# Vosk models
-**/vosk-model-small-en-us-0.15/
-*.tar.gz
-*.zip
-
-# Secrets & tokens
-credentials.json
-token.json
-login.py
-.env
-
-# Checkpoints if any remain
-**/checkpoint-*/
-
-# OS files
 .DS_Store
 Thumbs.db
